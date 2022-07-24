@@ -1,29 +1,39 @@
-from flask import Flask
+
+from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask import request
 
 app = Flask(__name__)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://sosualfred:snakeeyes1996@localhost:5432/foo'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:abc@localhost:5432/todoapp'
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
 
-class Person(db.Model):
-    __tablename__ = 'people'
+
+class Todo(db.Model):
+    __tablename__ = 'todos'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(), nullable=False)
+    description = db.Column(db.String(), nullable=False)
 
-# db.create_all()
+    def __repr__(self):
+        return f'<Todo {self.id} {self.description}>'
+
+
+db.create_all()
+
+
+@app.route('/todos/create', methods=['POST'])
+def create_todo():
+    description = request.form.get('description')
+    todo = Todo(description=description)
+    db.session.add(todo)
+    db.session.commit()
+    return render_template('index.html', data=Todo.query.all())
 
 
 @app.route('/')
 def index():
-    person = Person.query.first()
-    return 'Hello World {}'.format(person.name)
+    return render_template('index.html', data=Todo.query.all())
 
 
-
-
+# always include this at the bottom of your code
 if __name__ == '__main__':
-    app.run(debug=True)
-    app.run(host="0.0.0.0", port=5002)
+    app.run(host="0.0.0.0", port=3000)
